@@ -36,3 +36,19 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
+
+app.post("/users", async (req, res) => {
+    const { name } = req.body;
+
+    try {
+        const result = await pool.query(
+            "INSERT INTO users (email) VALUES ($1) RETURNING *",
+            [name]
+        );
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Database error:', err);
+        res.status(500).json({ error: 'Failed to create user' });
+    }
+});

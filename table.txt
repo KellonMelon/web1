@@ -1,0 +1,18 @@
+                                Table "public.users"
+        Column        |            Type             | Collation | Nullable | Default 
+----------------------+-----------------------------+-----------+----------+---------
+ id                   | integer                     |           |          | 
+ email                | character varying(50)       |           |          | 
+ created_at           | timestamp without time zone |           |          | 
+ energy               | integer                     |           |          | 
+ seriousness          | integer                     |           |          | 
+ tempo                | integer                     |           |          | 
+ jazz_influence       | integer                     |           |          | 
+ electronic_influence | integer                     |           |          | 
+ rock_influence       | integer                     |           |          | 
+ experimental         | integer                     |           |          | 
+ popularity           | integer                     |           |          | 
+ harmonic_complexity  | integer                     |           |          | 
+ rhythmic_complexity  | integer                     |           |          | 
+ era                  | integer                     |           |          | 
+
