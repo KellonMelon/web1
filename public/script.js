@@ -1,9 +1,10 @@
+const insertArtistForm = document.getElementById('insertArtistForm');
 const signInForm = document.getElementById('signInForm');
 const createAccountForm = document.getElementById('createAccountForm');
 const output = document.getElementById('output');
 
-
-signInForm.addEventListener("submit", async (e) => {
+if (signInForm) {
+  signInForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
 
     const email = signInForm.querySelector('#email').value.trim();
@@ -33,9 +34,11 @@ signInForm.addEventListener("submit", async (e) => {
     } catch (error) {
         output.innerText = "Error logging in: " + error.message;
     }
-});
+  });
+}
 
-createAccountForm.addEventListener("submit", async (e) => {
+if (createAccountForm) {
+  createAccountForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
 
     const email = document.getElementById('email').value;
@@ -62,4 +65,63 @@ createAccountForm.addEventListener("submit", async (e) => {
     } catch (error) {
         output.innerText = "Error creating user: " + error.message;
     }
-});
+  });
+}
+
+if (insertArtistForm) {
+  insertArtistForm.addEventListener("submit", async (e) => {
+    e.preventDefault(); // Prevent the default form submission
+
+    const artistName = document.getElementById('artistName').value;
+    const spotifyID = document.getElementById('spotifyID').value;
+    const listeners = document.getElementById('listeners').value;
+    const energy = document.getElementById('energy').value;
+    const seriousness = document.getElementById('seriousness').value;
+    const tempo = document.getElementById('tempo').value;
+    const jazz_influence = document.getElementById('jazz_influence').value;
+    const electronic_influence = document.getElementById('electronic_influence').value;
+    const rock_influence = document.getElementById('rock_influence').value;
+    const experimental = document.getElementById('experimental').value;
+    const popularity = document.getElementById('popularity').value;
+    const harmonic_complexity = document.getElementById('harmonic_complexity').value;
+    const rhythmic_complexity = document.getElementById('rhythmic_complexity').value;
+    const era = document.getElementById('era').value;
+
+
+    try {
+        const response = await fetch("/submitartist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                artistName,
+                spotifyID,
+                listeners,
+                energy,
+                seriousness,
+                tempo,
+                jazz_influence,
+                electronic_influence,
+                rock_influence,
+                experimental,
+                popularity,
+                harmonic_complexity,
+                rhythmic_complexity,
+                era
+            })
+        });
+
+        const data = await response.json();
+        console.log('Server response:', response.status, data);
+
+        if (response.ok) {
+          output.innerText = `Artist submitted:
+          ID: ${data.id}
+          Name: ${data.name}`;
+        } else {
+          output.innerText = data.error || "Failed to submit artist.";
+        }
+    } catch (error) {
+        output.innerText = "Error submitting artist: " + error.message;
+    }
+  });
+}

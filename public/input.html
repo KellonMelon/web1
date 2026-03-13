@@ -31,16 +31,54 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 
   <!-- About Section -->
   <div class="w3-content w3-justify w3-text-grey w3-padding-64" id="about">
-    <form id="createAccountForm">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email"><br><br>
-    <input type="submit" value="Create Account">
+    <form id="insertArtistForm">
+    <input id="artistName" name="artistName" placeholder="Artist Name"><br><br>
+    <input id="spotifyID" name="spotifyID" placeholder="Spotify ID"><br><br>
+    <input id="listeners" name="listeners" placeholder="Monthly Listeners"><br><br>
+    <label for="energy">Energy (1-10):</label>
+    <input
+        id="energy"
+        name="energy"
+        type="range"
+        min="1"      
+        max="10"    
+        step="1"     
+        value="5"
+    ><br><br>
+    <label for="seriousness">Seriousness (1-10):</label>
+    <input id="seriousness" name="seriousness" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="tempo">Tempo (1-10):</label>
+    <input id="tempo" name="tempo" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="jazz_influence">Jazz Influence (1-10):</label>
+    <input id="jazz_influence" name="jazz_influence" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="electronic_influence">Electronic Influence (1-10):</label>
+    <input id="electronic_influence" name="electronic_influence" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="rock_influence">Rock Influence (1-10):</label>
+    <input id="rock_influence" name="rock_influence" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="experimental">Experimental (1-10):</label>
+    <input id="experimental" name="experimental" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="popularity">Popularity (1-10):</label>
+    <input id="popularity" name="popularity" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="harmonic_complexity">Harmonic Complexity (1-10):</label>
+    <input id="harmonic_complexity" name="harmonic_complexity" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="rhythmic_complexity">Rhythmic Complexity (1-10):</label>
+    <input id="rhythmic_complexity" name="rhythmic_complexity" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <label for="era">Era (1-10):</label>
+    <input id="era" name="era" type="range" min="1" max="10" step="1" value="5"><br><br>
+
+    <input type="submit" value="Submit Artist">
     </form>
-    <form id="signInForm">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email"><br><br>
-    <input type="submit" value="Sign In">
-    </form>
+
+    <br><br>
     <div id="output"></div>
     <button class="w3-button w3-light-grey w3-padding-large w3-section" onclick="window.location.href='/about.html'">
       <i class="fa fa-download"></i> About

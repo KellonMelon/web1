@@ -1,10 +1,12 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+
 const express = require('express');
 const { Pool } = require('pg');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../public')));
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -16,20 +18,6 @@ const pool = new Pool({
 
 pool.on('error', (err) => {
   console.error('Unexpected idle client error', err);
-});
-
-app.get('/', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT email FROM users LIMIT 1');
-    if (result.rows.length) {
-      res.send(result.rows[0].email);
-    } else {
-      res.send('No email found');
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Database error');
-  }
 });
 
 const port = process.env.PORT || 3000;
@@ -82,5 +70,22 @@ app.post("/login", async (req, res) => {
     } catch (err) {
       console.error('Database error:', err);
       res.status(500).json({ error: 'Failed to sign in' });
+    }
+});
+
+app.post("/submitartist", async (req, res) => {
+    const { artistName, spotifyID, listeners, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era } = req.body;
+
+    try {
+      const result = await pool.query(
+        "INSERT INTO artists (name, spotify_id, listeners, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *",
+        [artistName, spotifyID, parseInt(listeners), parseInt(energy), parseInt(seriousness), parseInt(tempo), parseInt(jazz_influence), parseInt(electronic_influence), parseInt(rock_influence), parseInt(experimental), parseInt(popularity), parseInt(harmonic_complexity), parseInt(rhythmic_complexity), parseInt(era)]
+      );
+
+      console.log('Insert result:', result.rows[0]);
+      res.json(result.rows[0]);
+    } catch (err) {
+      console.error('Database error:', err);
+      res.status(500).json({ error: 'Failed to submit artist' });
     }
 });
