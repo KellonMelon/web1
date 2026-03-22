@@ -3,6 +3,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
+const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(express.json());
@@ -26,26 +27,33 @@ app.listen(port, () => {
 });
 
 app.post("/createacc", async (req, res) => {
-    const { name } = req.body;
+    const { email, password } = req.body;
+
+    if (!email || !password || password.length < 6) {
+        return res.status(400).json({ error: 'Email and password required (min 6 chars)' });
+    }
 
     try {
-        //check if user already exists
+        // Check if user already exists
         const existingUser = await pool.query(
-            "SELECT * FROM users WHERE email = $1",
-            [name]
+            "SELECT id FROM users WHERE email = $1",
+            [email]
         );
 
-        if  (existingUser.rows.length > 0) {
-          res.json(existingUser.rows[0]);
-          return;
+        if (existingUser.rows.length > 0) {
+            return res.status(409).json({ error: 'User already exists' });
         }
 
+        // Hash the password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
         const result = await pool.query(
-            "INSERT INTO users (email) VALUES ($1) RETURNING *",
-            [name]
+            "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email",
+            [email, hashedPassword]
         );
 
-        res.json(result.rows[0]);
+        res.json(result.rows[0]);  // Return user data without the hash
     } catch (err) {
         console.error('Database error:', err);
         res.status(500).json({ error: 'Failed to create user' });
@@ -53,23 +61,36 @@ app.post("/createacc", async (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
-    const { email } = req.body;
+    const { email, password } = req.body;  // Now expecting 'password' in the request body
+
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required' });
+    }
 
     try {
-      const result = await pool.query(
-        "SELECT * FROM users WHERE email = $1",
-        [email]
-      );
+        const result = await pool.query(
+            "SELECT id, email, password_hash FROM users WHERE email = $1",
+            [email]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        const user = result.rows[0];
+        //console.log(user.password_hash);
+        const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
 
-      if (result.rows.length) {
-        res.json(result.rows[0]);
-      } else {
-        res.status(401).json({ error: 'User not found' });
-      }
+        if (!isValidPassword) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // Password is valid; return user data (or generate a token)
+        res.json({ id: user.id, email: user.email });
     } catch (err) {
-      console.error('Database error:', err);
-      res.status(500).json({ error: 'Failed to sign in' });
+        console.error('Database error:', err);
+        res.status(500).json({ error: 'Failed to sign in' });
     }
 });
 

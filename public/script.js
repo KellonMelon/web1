@@ -7,10 +7,11 @@ if (signInForm) {
   signInForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
 
-    const email = signInForm.querySelector('#email').value.trim();
+    const email = signInForm.querySelector('#sign-email').value.trim();
+    const password = signInForm.querySelector('#sign-password').value;
 
-    if (!email) {
-        output.innerText = "Please enter an email address.";
+    if (!email || !password) {
+        output.innerText = "Please enter an email and password.";
         return;
     }
 
@@ -18,7 +19,7 @@ if (signInForm) {
         const response = await fetch("/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email, password })
         });
 
         const data = await response.json();
@@ -41,7 +42,8 @@ if (createAccountForm) {
   createAccountForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
 
-    const email = document.getElementById('email').value;
+    const email = document.querySelector('#createAccountForm #create-email').value.trim();
+    const password = document.querySelector('#createAccountForm #create-password').value;
 
     if (!email) {
         output.innerText = "Please enter an email address.";
@@ -53,15 +55,19 @@ if (createAccountForm) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                name: email
+                email,
+                password
             })
         });
 
         const data = await response.json();
 
-        output.innerText = `User created:
-        ID: ${data.id}
-        Email: ${data.email}`;
+        if (!response.ok) {
+            output.innerText = data.error || "Failed to create user.";
+            return;
+        }
+
+        output.innerText = `User created:\nID: ${data.id}\nEmail: ${data.email}`;
     } catch (error) {
         output.innerText = "Error creating user: " + error.message;
     }

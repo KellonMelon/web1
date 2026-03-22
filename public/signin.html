@@ -32,16 +32,18 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <!-- About Section -->
   <div class="w3-content w3-justify w3-text-grey w3-padding-64" id="about">
     <form id="createAccountForm">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email"><br><br>
+    <input type="email" id="create-email" name="email" placeholder="Email"><br><br>
+    <input type="password" id="create-password" name="password" placeholder="Password"><br><br>
     <input type="submit" value="Create Account">
     </form>
+  <br><br><br><br>
     <form id="signInForm">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email"><br><br>
+    <input type="email" id="sign-email" name="email" placeholder="Email"><br><br>
+    <input type="password" id="sign-password" name="password" placeholder="Password"><br><br>
     <input type="submit" value="Sign In">
     </form>
     <div id="output"></div>
+    <br><br><br><br>
     <button class="w3-button w3-light-grey w3-padding-large w3-section" onclick="window.location.href='/about.html'">
       <i class="fa fa-download"></i> About
     </button>
