@@ -4,10 +4,21 @@ const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
 const bcrypt = require('bcrypt');
+const session = require('express-session');
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false,
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 day
+        } // Set to true if using HTTPS
+}));
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -86,7 +97,10 @@ app.post("/login", async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Password is valid; return user data (or generate a token)
+        // Password is valid; set session before sending response
+        req.session.userId = user.id;
+        req.session.email = user.email;
+
         res.json({ id: user.id, email: user.email });
     } catch (err) {
         console.error('Database error:', err);
@@ -94,8 +108,23 @@ app.post("/login", async (req, res) => {
     }
 });
 
+app.post("/logout", (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Session destruction error:', err);
+            return res.status(500).json({ error: 'Failed to log out' });
+        }
+        res.clearCookie('connect.sid'); // Clear the session cookie
+        res.json({ message: 'Logged out successfully' });
+    });
+});
+
 app.post("/submitartist", async (req, res) => {
     const { artistName, spotifyID, listeners, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era } = req.body;
+
+    if (!req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
 
     try {
       const result = await pool.query(
@@ -109,4 +138,31 @@ app.post("/submitartist", async (req, res) => {
       console.error('Database error:', err);
       res.status(500).json({ error: 'Failed to submit artist' });
     }
+});
+
+app.post("/submitpersonality", async (req, res) => {
+    const {email, id, password_hash, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era } = req.body;
+
+    if (!req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      const result = await pool.query(
+        "INSERT INTO users (email, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
+        [email, parseInt(energy), parseInt(seriousness), parseInt(tempo), parseInt(jazz_influence), parseInt(electronic_influence), parseInt(rock_influence), parseInt(experimental), parseInt(popularity), parseInt(harmonic_complexity), parseInt(rhythmic_complexity), parseInt(era)]
+      );
+      res.json(result.rows[0]);
+    } catch (err) {
+      console.error('Database error:', err);
+      res.status(500).json({ error: 'Failed to submit personality into users' });
+    }
+});
+
+app.get("/me", (req, res) => {
+  if (req.session.userId) {
+    res.json({ id: req.session.userId, email: req.session.email });
+  } else {
+    res.status(401).json({ error: 'Not logged in' });
+  }
 });

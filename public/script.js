@@ -1,6 +1,8 @@
 const insertArtistForm = document.getElementById('insertArtistForm');
 const signInForm = document.getElementById('signInForm');
 const createAccountForm = document.getElementById('createAccountForm');
+const logoutButton = document.getElementById('logoutButton');
+const insertPersonalityForm = document.getElementById('insertPersonalityForm');
 const output = document.getElementById('output');
 
 if (signInForm) {
@@ -25,8 +27,7 @@ if (signInForm) {
         const data = await response.json();
 
         if (response.ok) {
-            // Store logged-in user in localStorage
-            localStorage.setItem('loggedInUser', JSON.stringify(data));
+            // No need for localStorage; session is handled server-side
             output.innerText = `Logged in as: ${data.email} (ID: ${data.id})`;
             // Optionally hide forms or show logged-in UI
         } else {
@@ -131,3 +132,35 @@ if (insertArtistForm) {
     }
   });
 }
+
+if (logoutButton) {
+  logoutButton.addEventListener("click", logout);
+}
+
+async function logout() {
+  try {
+    const response = await fetch("/logout", { method: "POST" });
+    if (response.ok) {
+      output.innerText = "Logged out successfully.";
+      // Update UI as needed
+    } else {
+      output.innerText = "Logout failed.";
+    }
+  } catch (error) {
+    output.innerText = "Error logging out: " + error.message;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const response = await fetch("/me");
+    if (response.ok) {
+      const data = await response.json();
+      output.innerText = `Welcome back: ${data.email}`;
+    } else {
+      output.innerText = "Not logged in.";
+    }
+  } catch (error) {
+    console.error("Error checking login status:", error);
+  }
+});
