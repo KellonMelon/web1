@@ -8,7 +8,7 @@ const session = require('express-session');
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), { extensions: ['html'] }));
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -141,21 +141,26 @@ app.post("/submitartist", async (req, res) => {
 });
 
 app.post("/submitpersonality", async (req, res) => {
-    const {email, id, password_hash, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era } = req.body;
-
     if (!req.session.userId) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const { energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era } = req.body;
+
     try {
+      const userCheck = await pool.query("SELECT id FROM users WHERE id = $1", [req.session.userId]);
+      if (userCheck.rows.length === 0) {
+          return res.status(401).json({ error: 'User not found' });
+      }
+
       const result = await pool.query(
-        "INSERT INTO users (email, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
-        [email, parseInt(energy), parseInt(seriousness), parseInt(tempo), parseInt(jazz_influence), parseInt(electronic_influence), parseInt(rock_influence), parseInt(experimental), parseInt(popularity), parseInt(harmonic_complexity), parseInt(rhythmic_complexity), parseInt(era)]
+        "UPDATE users SET energy=$1, seriousness=$2, tempo=$3, jazz_influence=$4, electronic_influence=$5, rock_influence=$6, experimental=$7, popularity=$8, harmonic_complexity=$9, rhythmic_complexity=$10, era=$11 WHERE id=$12 RETURNING id, email",
+        [parseInt(energy), parseInt(seriousness), parseInt(tempo), parseInt(jazz_influence), parseInt(electronic_influence), parseInt(rock_influence), parseInt(experimental), parseInt(popularity), parseInt(harmonic_complexity), parseInt(rhythmic_complexity), parseInt(era), req.session.userId]
       );
       res.json(result.rows[0]);
     } catch (err) {
       console.error('Database error:', err);
-      res.status(500).json({ error: 'Failed to submit personality into users' });
+      res.status(500).json({ error: 'Failed to submit personality' });
     }
 });
 
@@ -165,4 +170,62 @@ app.get("/me", (req, res) => {
   } else {
     res.status(401).json({ error: 'Not logged in' });
   }
+});
+
+app.get("/meEverything", async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+    try {
+        const userResult = await pool.query(
+            "SELECT id, email, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era FROM users WHERE id = $1",
+            [req.session.userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = userResult.rows[0];
+        const artistsResult = await pool.query("SELECT * FROM artists ORDER BY id ASC");
+
+        if (artistsResult.rows.length === 0) {
+            return res.status(404).json({ error: 'No artists found' });
+        }
+
+        let bestArtist = null;
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        for (const artist of artistsResult.rows) {
+            const energyDifference = Math.abs(Number(user.energy) - Number(artist.energy));
+            const seriousnessDifference = Math.abs(Number(user.seriousness) - Number(artist.seriousness));
+            const tempoDifference = Math.abs(Number(user.tempo) - Number(artist.tempo));
+            const jazzDifference = 2 * Math.abs(Number(user.jazz_influence) - Number(artist.jazz_influence));
+            const electronicDifference = 2 * Math.abs(Number(user.electronic_influence) - Number(artist.electronic_influence));
+            const rockDifference = 2 * Math.abs(Number(user.rock_influence) - Number(artist.rock_influence));
+            const experimentalDifference = Math.abs(Number(user.experimental) - Number(artist.experimental));
+            const popularityDifference = Math.abs(Number(user.popularity) - Number(artist.popularity));
+            const harmonicDifference = Math.abs(Number(user.harmonic_complexity) - Number(artist.harmonic_complexity));
+            const rhythmicDifference = Math.abs(Number(user.rhythmic_complexity) - Number(artist.rhythmic_complexity));
+            const eraDifference = Math.abs(Number(user.era) - Number(artist.era));
+
+            const score = energyDifference + seriousnessDifference + tempoDifference + jazzDifference + electronicDifference + rockDifference + experimentalDifference + popularityDifference + harmonicDifference + rhythmicDifference + eraDifference;
+
+            if (score < bestScore) {
+                bestScore = score;
+                bestArtist = artist;
+            }
+        }
+
+        return res.json({
+            id: user.id,
+            email: user.email,
+            finalColumn: bestArtist ? bestArtist.id : null,
+            score: Number.isFinite(bestScore) ? bestScore : null,
+            match: bestArtist
+        });
+    } catch (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to compare personality' });
+    }
 });
