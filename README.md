@@ -1,5 +1,5 @@
-#Niche Artist Website
+# Niche Artist Website
 
-More info to come
+Uses Node.js, Express, W3schools CSS
 
-docker run -it --rm --entrypoint sh node:24-alpine
+For my Senior Capstone Project
