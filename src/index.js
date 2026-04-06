@@ -52,8 +52,31 @@ app.post("/createacc", async (req, res) => {
         );
 
         if (existingUser.rows.length > 0) {
-            return res.status(409).json({ error: 'User already exists' });
-        }
+            //return res.status(409).json({ error: 'User already exists' });
+            const result = await pool.query(
+            "SELECT id, email, password_hash FROM users WHERE email = $1",
+            [email]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(401).json({ error: 'Invalid email or password' });
+            }
+
+            const user = result.rows[0];
+            //console.log(user.password_hash);
+            const isValidPassword = await bcrypt.compare(password, user.password_hash);
+
+
+            if (!isValidPassword) {
+                return res.status(401).json({ error: 'Invalid email or password' });
+            }
+
+            // Password is valid; set session before sending response
+            req.session.userId = user.id;
+            req.session.email = user.email;
+
+            return res.json({ id: user.id, email: user.email });
+            }
 
         // Hash the password
         const saltRounds = 10;
@@ -64,7 +87,16 @@ app.post("/createacc", async (req, res) => {
             [email, hashedPassword]
         );
 
-        res.json(result.rows[0]);  // Return user data without the hash
+        const user = result.rows[0];
+        req.session.userId = user.id;
+        req.session.email = user.email;
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ error: 'Session error' });
+            }
+            res.json(user);
+        });
     } catch (err) {
         console.error('Database error:', err);
         res.status(500).json({ error: 'Failed to create user' });

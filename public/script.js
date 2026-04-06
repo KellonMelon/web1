@@ -69,7 +69,7 @@ if (createAccountForm) {
             return;
         }
 
-        output.innerText = `User created:\nID: ${data.id}\nEmail: ${data.email}`;
+        window.location.href = '/personality';
     } catch (error) {
         output.innerText = "Error creating user: " + error.message;
     }
@@ -235,6 +235,9 @@ window.addEventListener('DOMContentLoaded', async () => {
       output.innerText = `Welcome back: ${data.email}`;
     } else {
       output.innerText = "Not logged in.";
+      if (window.location.pathname !== '/signin') {
+        window.location.href = '/signin';
+      }
     }
   } catch (error) {
     console.error("Error checking login status:", error);
