@@ -6,6 +6,21 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
 
+const SpotifyWebApi = require('spotify-web-api-node');
+
+const spotifyApi = new SpotifyWebApi({
+  clientId: process.env.SPOTIFY_CLIENT_ID,
+  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+});
+
+async function refreshSpotifyToken() {
+  const data = await spotifyApi.clientCredentialsGrant();
+  spotifyApi.setAccessToken(data.body['access_token']);
+  // Re-run 5 minutes before the token expires (tokens last 3600s)
+  setTimeout(refreshSpotifyToken, (data.body['expires_in'] - 300) * 1000);
+}
+refreshSpotifyToken().catch(err => console.error('Spotify token error:', err));
+
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public'), { extensions: ['html'] }));
@@ -16,7 +31,7 @@ app.use(session({
     cookie: {
         secure: false,
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 day
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
         } // Set to true if using HTTPS
 }));
 
@@ -249,12 +264,26 @@ app.get("/meEverything", async (req, res) => {
             }
         }
 
+        let artistImage = null;
+        if (bestArtist && bestArtist.spotify_id) {
+            try {
+                const spotifyData = await spotifyApi.getArtist(bestArtist.spotify_id);
+                const images = spotifyData.body.images;
+                if (images && images.length > 0) {
+                    artistImage = images[0].url;
+                }
+            } catch (err) {
+                console.error('Spotify image fetch error:', err.message);
+            }
+        }
+
         return res.json({
             id: user.id,
             email: user.email,
             finalColumn: bestArtist ? bestArtist.id : null,
             score: Number.isFinite(bestScore) ? bestScore : null,
-            match: bestArtist
+            match: bestArtist,
+            artistImage
         });
     } catch (err) {
         console.error('Database error:', err);

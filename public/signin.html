@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/x-icon" href="/pictures/gage.png">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+<link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <style>
@@ -13,8 +13,6 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 .w3-row-padding img {margin-bottom: 12px}
 /* Set the width of the sidebar to 120px */
 .w3-sidebar {width: 120px;background: #222;}
-/* Add a left margin to the "page content" that matches the width of the sidebar (120px) */
-#main {margin-left: 120px}
 /* Remove margins from "page content" on small screens */
 @media only screen and (max-width: 600px) {#main {margin-left: 0}}
 body {
@@ -34,7 +32,13 @@ footer {
 <!-- Page Content -->
 <div class="w3-padding-large" id="main">
   <!-- Header/Home -->
-  <header class="w3-container w3-padding-32 w3-center" id="home">
+  <header class="w3-container w3-padding-32 w3-center" id="home" style="position: relative;">
+    <div style="position: absolute; top: 16px; right: 16px; display: flex; align-items: center; gap: 12px;">
+      <span id="output" style="color: white; font-size: 14px;"></span>
+      <button class="w3-button w3-light-grey w3-padding" id="logoutButton" style="display: none;">
+        <i class="fa fa-sign-out"></i> Log Out
+      </button>
+    </div>
     <a href="/index">
     <img src="pictures/logofull.png" alt="Logo" style="width:40%; height:auto;">
     </a>
@@ -54,23 +58,13 @@ footer {
     <input type="password" id="sign-password" name="password" placeholder="Password"><br><br>
     <input type="submit" value="Sign In">
     </form>
-    <div id="output"></div>
-    <br><br><br><br>
-    <button class="w3-button w3-light-grey w3-padding-large w3-section" id="logoutButton">
-      <i class="fa fa-download"></i> Log Out
-    </button>
+
   </div>
     
   
   
-    <!-- Footer -->
-  <footer class="w3-content w3-padding-64 w3-text-grey w3-xlarge">
-    <i class="fa fa-facebook-official w3-hover-opacity"></i>
-    <i class="fa fa-instagram w3-hover-opacity"></i>
-    <i class="fa fa-snapchat w3-hover-opacity"></i>
-    <i class="fa fa-pinterest-p w3-hover-opacity"></i>
-    <i class="fa fa-twitter w3-hover-opacity"></i>
-    <i class="fa fa-linkedin w3-hover-opacity"></i>
+  <footer>
+    <p>Copyright 2026 - Kellon Johnsen</p>
   <!-- End footer -->
   </footer>
 

@@ -4,9 +4,8 @@ const createAccountForm = document.getElementById('createAccountForm');
 const logoutButton = document.getElementById('logoutButton');
 const insertPersonalityForm = document.getElementById('insertPersonalityForm');
 const output = document.getElementById('output');
+const results = document.getElementById('results');
 const compareButton = document.getElementById('compareButton');
-
-
 if (signInForm) {
   signInForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
@@ -192,8 +191,7 @@ async function logout() {
   try {
     const response = await fetch("/logout", { method: "POST" });
     if (response.ok) {
-      output.innerText = "Logged out successfully.";
-      // Update UI as needed
+      window.location.href = '/';
     } else {
       output.innerText = "Logout failed.";
     }
@@ -212,30 +210,42 @@ async function compare() {
     const data = await response.json();
 
     if (!response.ok) {
-      output.innerText = data.error || "Failed to compare.";
+      results.innerHTML = data.error || "Failed to compare.";
       return;
     }
 
     if (!data.match) {
-      output.innerText = "No artist match found yet.";
+      results.innerHTML = "No artist match found yet.";
       return;
     }
 
-    output.innerText = `Best match: ${data.match.name} (artist id: ${data.match.id}, score: ${data.score})`;
+    const { match, score, artistImage } = data;
+    const percentageScore = (110 - score) / 110 * 100; // Convert distance to percentage match
+    results.innerHTML = `
+      ${artistImage ? `<img src="${artistImage}" alt="${match.name}" style="width:200px;height:200px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 16px;">` : ''}
+      <p style="color:white;font-size:1.4em;text-align:center;">${match.name}</p>
+      <p style="color:#ccc;text-align:center;">Match score: ${percentageScore.toFixed(1)}%</p>
+    `;
   } catch (error) {
-    output.innerText = "Error comparing personality: " + error.message;
+    results.innerHTML = "Error comparing personality: " + error.message;
   }
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+  const signinButton = document.getElementById('signinButton');
   try {
     const response = await fetch("/me");
     if (response.ok) {
       const data = await response.json();
-      output.innerText = `Welcome back: ${data.email}`;
+      if (output) output.innerText = `${data.email}`;
+      if (signinButton) signinButton.style.display = 'none';
+      if (logoutButton) logoutButton.style.display = 'inline-block';
     } else {
-      output.innerText = "Not logged in.";
-      if (window.location.pathname !== '/signin') {
+      if (output) output.innerText = '';
+      if (signinButton) signinButton.style.display = 'inline-block';
+      if (logoutButton) logoutButton.style.display = 'none';
+      const path = window.location.pathname;
+      if (path !== '/signin' && path !== '/' && path !== '/index') {
         window.location.href = '/signin';
       }
     }
