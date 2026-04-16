@@ -22,6 +22,7 @@ async function refreshSpotifyToken() {
 refreshSpotifyToken().catch(err => console.error('Spotify token error:', err));
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public'), { extensions: ['html'] }));
 app.use(session({
@@ -29,8 +30,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false,
-        httpOnly: true,
+        secure: true,
         maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
         } // Set to true if using HTTPS
 }));
@@ -49,7 +49,8 @@ pool.on('error', (err) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+  const publicPort = process.env.PUBLIC_PORT || 443;
+  console.log(`Server listening on port ${port} (publicly forwarded via Nginx on port ${publicPort})`);
 });
 
 app.post("/createacc", async (req, res) => {

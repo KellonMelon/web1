@@ -21,7 +21,14 @@ body {
   min-height: 100vh;
 }
 footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  padding: 8px 16px;
   background: transparent;
+  color: #ccc;
+  font-size: 12px;
+  z-index: 100;
 }
 </style>
 </head>
@@ -43,7 +50,7 @@ footer {
   </header>
 
   <!-- About Section -->
-  <div class="w3-content w3-justify w3-text-grey w3-padding-64" id="about">
+  <div class="w3-content w3-justify w3-text-white w3-padding-64" id="about">
     <form id="insertArtistForm">
     <input id="artistName" name="artistName" placeholder="Artist Name"><br><br>
     <input id="spotifyID" name="spotifyID" placeholder="Spotify ID"><br><br>
@@ -111,7 +118,7 @@ footer {
   
   
   <footer>
-    <p>Copyright 2026 - Kellon Johnsen</p>
+    <p style="margin:0;">Copyright 2026 - Kellon Johnsen</p>
   <!-- End footer -->
   </footer>
 
