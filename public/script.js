@@ -6,6 +6,42 @@ const insertPersonalityForm = document.getElementById('insertPersonalityForm');
 const output = document.getElementById('output');
 const results = document.getElementById('results');
 const compareButton = document.getElementById('compareButton');
+const artistSuccess = document.getElementById('artistSuccess');
+const artistSuccessMessage = document.getElementById('artistSuccessMessage');
+const signinButton = document.getElementById('signinButton');
+
+const DEFAULT_NEXT_PAGE = '/personality';
+
+function normalizeNextPage(next) {
+  if (!next) return DEFAULT_NEXT_PAGE;
+  if (next === '/signin' || next === '/login') return DEFAULT_NEXT_PAGE;
+  try {
+    const url = new URL(next, window.location.origin);
+    if (url.origin !== window.location.origin) return DEFAULT_NEXT_PAGE;
+    return url.pathname + url.search;
+  } catch {
+    return DEFAULT_NEXT_PAGE;
+  }
+}
+
+function getNextPage() {
+  const params = new URLSearchParams(window.location.search);
+  const nextFromQuery = params.get('next');
+  if (nextFromQuery) return normalizeNextPage(nextFromQuery);
+
+  const saved = sessionStorage.getItem('signinNext');
+  return normalizeNextPage(saved);
+}
+
+function saveNextPage() {
+  const next = window.location.pathname + window.location.search;
+  sessionStorage.setItem('signinNext', next);
+}
+
+if (signinButton && window.location.pathname !== '/signin') {
+  signinButton.addEventListener('click', saveNextPage);
+}
+
 if (signInForm) {
   signInForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
@@ -28,8 +64,10 @@ if (signInForm) {
         const data = await response.json();
 
         if (response.ok) {
-            output.innerText = `Logged in as: ${data.email} (ID: ${data.id})`;
-            window.location.href = '/personality';
+            const redirectTo = getNextPage();
+            sessionStorage.removeItem('signinNext');
+            output.innerText = `Logged in as: ${data.email} (ID: ${data.id}). Redirecting...`;
+            window.location.href = redirectTo;
         } else {
             output.innerText = data.error || "Login failed.";
         }
@@ -68,7 +106,9 @@ if (createAccountForm) {
             return;
         }
 
-        window.location.href = '/personality';
+        const redirectTo = getNextPage();
+        sessionStorage.removeItem('signinNext');
+        window.location.href = redirectTo;
     } catch (error) {
         output.innerText = "Error creating user: " + error.message;
     }
@@ -121,10 +161,13 @@ if (insertArtistForm) {
         console.log('Server response:', response.status, data);
 
         if (response.ok) {
-          output.innerText = `Artist submitted:
-          ID: ${data.id}
-          Name: ${data.name}`;
+          if (artistSuccess && artistSuccessMessage) {
+            artistSuccessMessage.innerText = `ID: ${data.id}\nName: ${data.name}`;
+            artistSuccess.style.display = 'block';
+          }
+          output.innerText = '';
         } else {
+          if (artistSuccess) artistSuccess.style.display = 'none';
           output.innerText = data.error || "Failed to submit artist.";
         }
     } catch (error) {
@@ -246,7 +289,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (logoutButton) logoutButton.style.display = 'none';
       const path = window.location.pathname;
       if (path !== '/signin' && path !== '/' && path !== '/index') {
-        window.location.href = '/signin';
+        saveNextPage();
+        window.location.href = '/signin?next=' + encodeURIComponent(path + window.location.search);
       }
     }
   } catch (error) {
