@@ -48,6 +48,18 @@ pool.on('error', (err) => {
 });
 
 const port = process.env.PORT || 3000;
+
+// Function to verify password against bcrypt hash
+async function verifyPassword(plainPassword, hashToCompare) {
+  try {
+    const isValid = await bcrypt.compare(plainPassword, hashToCompare);
+    return isValid;
+  } catch (err) {
+    console.error('Password verification error:', err);
+    return false;
+  }
+}
+
 app.listen(port, () => {
   const publicPort = process.env.PUBLIC_PORT || 443;
   console.log(`Server listening on port ${port} (publicly forwarded via Nginx on port ${publicPort})`);
@@ -170,10 +182,6 @@ app.post("/logout", (req, res) => {
 app.post("/submitartist", async (req, res) => {
     const { artistName, spotifyID, listeners, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era } = req.body;
 
-    if (!req.session.userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     try {
       const result = await pool.query(
         "INSERT INTO artists (name, spotify_id, listeners, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *",
@@ -289,5 +297,29 @@ app.get("/meEverything", async (req, res) => {
     } catch (err) {
         console.error('Database error:', err);
         return res.status(500).json({ error: 'Failed to compare personality' });
+    }
+});
+
+// Password verification endpoint for input.html
+app.post("/verifypassword", async (req, res) => {
+    const { password } = req.body;
+    
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required' });
+    }
+
+    const savedHash = "$2b$10$ISpqqCudMLvfzPhtvEJGpOEivQNzP/wQMwIHP2kl7jvzxXVBMfEjG";
+    
+    try {
+        const isValid = await verifyPassword(password, savedHash);
+        
+        if (isValid) {
+            res.json({ success: true, message: 'Password is correct' });
+        } else {
+            res.status(401).json({ success: false, error: 'Invalid password' });
+        }
+    } catch (err) {
+        console.error('Password verification error:', err);
+        res.status(500).json({ error: 'Verification failed' });
     }
 });

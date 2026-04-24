@@ -119,23 +119,45 @@ if (insertArtistForm) {
   insertArtistForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
 
-    const artistName = document.getElementById('artistName').value;
-    const spotifyID = document.getElementById('spotifyID').value;
-    const listeners = document.getElementById('listeners').value;
-    const energy = document.getElementById('energy').value;
-    const seriousness = document.getElementById('seriousness').value;
-    const tempo = document.getElementById('tempo').value;
-    const jazz_influence = document.getElementById('jazz_influence').value;
-    const electronic_influence = document.getElementById('electronic_influence').value;
-    const rock_influence = document.getElementById('rock_influence').value;
-    const experimental = document.getElementById('experimental').value;
-    const popularity = document.getElementById('popularity').value;
-    const harmonic_complexity = document.getElementById('harmonic_complexity').value;
-    const rhythmic_complexity = document.getElementById('rhythmic_complexity').value;
-    const era = document.getElementById('era').value;
+    const password = document.getElementById('passwordInput').value;
+    const passwordOutput = document.getElementById('passwordOutput');
+    const formOutput = document.getElementById('formOutput');
 
+    if (!password) {
+        passwordOutput.innerText = "Please enter a password.";
+        return;
+    }
 
     try {
+        // First, verify the password
+        const passwordResponse = await fetch("/verifypassword", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password })
+        });
+
+        if (!passwordResponse.ok) {
+            const data = await passwordResponse.json();
+            passwordOutput.innerText = data.error || "Invalid password.";
+            return;
+        }
+
+        // Password is correct, proceed with artist submission
+        const artistName = document.getElementById('artistName').value;
+        const spotifyID = document.getElementById('spotifyID').value;
+        const listeners = document.getElementById('listeners').value;
+        const energy = document.getElementById('energy').value;
+        const seriousness = document.getElementById('seriousness').value;
+        const tempo = document.getElementById('tempo').value;
+        const jazz_influence = document.getElementById('jazz_influence').value;
+        const electronic_influence = document.getElementById('electronic_influence').value;
+        const rock_influence = document.getElementById('rock_influence').value;
+        const experimental = document.getElementById('experimental').value;
+        const popularity = document.getElementById('popularity').value;
+        const harmonic_complexity = document.getElementById('harmonic_complexity').value;
+        const rhythmic_complexity = document.getElementById('rhythmic_complexity').value;
+        const era = document.getElementById('era').value;
+
         const response = await fetch("/submitartist", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -165,13 +187,13 @@ if (insertArtistForm) {
             artistSuccessMessage.innerText = `ID: ${data.id}\nName: ${data.name}`;
             artistSuccess.style.display = 'block';
           }
-          output.innerText = '';
+          formOutput.innerText = '';
         } else {
           if (artistSuccess) artistSuccess.style.display = 'none';
-          output.innerText = data.error || "Failed to submit artist.";
+          formOutput.innerText = data.error || "Failed to submit artist.";
         }
     } catch (error) {
-        output.innerText = "Error submitting artist: " + error.message;
+        formOutput.innerText = "Error: " + error.message;
     }
   });
 }
