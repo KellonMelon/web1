@@ -310,7 +310,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (signinButton) signinButton.style.display = 'inline-block';
       if (logoutButton) logoutButton.style.display = 'none';
       const path = window.location.pathname;
-      if (path !== '/signin' && path !== '/' && path !== '/index') {
+      if (path !== '/signin' && path !== '/' && path !== '/index' && path !== '/about') {
         saveNextPage();
         window.location.href = '/signin?next=' + encodeURIComponent(path + window.location.search);
       }
