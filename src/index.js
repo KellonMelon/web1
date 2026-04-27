@@ -1,5 +1,7 @@
+// Load environment variables from .env file
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
+// defining constants for using packages
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
@@ -8,11 +10,13 @@ const session = require('express-session');
 
 const SpotifyWebApi = require('spotify-web-api-node');
 
+// setting up variables for Spotify API
 const spotifyApi = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
+// Function to refresh Spotify access token
 async function refreshSpotifyToken() {
   const data = await spotifyApi.clientCredentialsGrant();
   spotifyApi.setAccessToken(data.body['access_token']);
@@ -21,6 +25,7 @@ async function refreshSpotifyToken() {
 }
 refreshSpotifyToken().catch(err => console.error('Spotify token error:', err));
 
+// Create Express app and defines session
 const app = express();
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -35,6 +40,7 @@ app.use(session({
         } // Set to true if using HTTPS
 }));
 
+// Create a PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -47,7 +53,14 @@ pool.on('error', (err) => {
   console.error('Unexpected idle client error', err);
 });
 
+// Defines port for server to listen on (.env), backup is 3000
 const port = process.env.PORT || 3000;
+
+// Start the server, logged in console
+app.listen(port, () => {
+  const publicPort = process.env.PUBLIC_PORT || 443;
+  console.log(`Server listening on port ${port} (publicly forwarded via Nginx on port ${publicPort})`);
+});
 
 // Function to verify password against bcrypt hash
 async function verifyPassword(plainPassword, hashToCompare) {
@@ -60,11 +73,7 @@ async function verifyPassword(plainPassword, hashToCompare) {
   }
 }
 
-app.listen(port, () => {
-  const publicPort = process.env.PUBLIC_PORT || 443;
-  console.log(`Server listening on port ${port} (publicly forwarded via Nginx on port ${publicPort})`);
-});
-
+// Endpoint to create account, also handles login if user already exists
 app.post("/createacc", async (req, res) => {
     const { email, password } = req.body;
 
@@ -115,6 +124,7 @@ app.post("/createacc", async (req, res) => {
             [email, hashedPassword]
         );
 
+        // Saving session
         const user = result.rows[0];
         req.session.userId = user.id;
         req.session.email = user.email;
@@ -131,6 +141,7 @@ app.post("/createacc", async (req, res) => {
     }
 });
 
+// Endpoint to log in, checks password and sets session
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;  // Now expecting 'password' in the request body
 
@@ -168,6 +179,7 @@ app.post("/login", async (req, res) => {
     }
 });
 
+// Endpoint to log out, destroys session
 app.post("/logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -179,6 +191,7 @@ app.post("/logout", (req, res) => {
     });
 });
 
+// Endpoint to submit artist data, inserts into database
 app.post("/submitartist", async (req, res) => {
     const { artistName, spotifyID, listeners, energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era } = req.body;
 
@@ -196,6 +209,7 @@ app.post("/submitartist", async (req, res) => {
     }
 });
 
+// Endpoint to submit personality data, updates user in database
 app.post("/submitpersonality", async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -203,6 +217,7 @@ app.post("/submitpersonality", async (req, res) => {
 
     const { energy, seriousness, tempo, jazz_influence, electronic_influence, rock_influence, experimental, popularity, harmonic_complexity, rhythmic_complexity, era } = req.body;
 
+    // First checks if user exists using ID
     try {
       const userCheck = await pool.query("SELECT id FROM users WHERE id = $1", [req.session.userId]);
       if (userCheck.rows.length === 0) {
@@ -220,6 +235,7 @@ app.post("/submitpersonality", async (req, res) => {
     }
 });
 
+// Endpoint to get current user info, checks session
 app.get("/me", (req, res) => {
   if (req.session.userId) {
     res.json({ id: req.session.userId, email: req.session.email });
@@ -228,6 +244,8 @@ app.get("/me", (req, res) => {
   }
 });
 
+
+// Endpoint to compare user personality with artists, returns best match and score
 app.get("/meEverything", async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ error: 'Not logged in' });
@@ -252,6 +270,8 @@ app.get("/meEverything", async (req, res) => {
         let bestArtist = null;
         let bestScore = Number.POSITIVE_INFINITY;
 
+        // Math for comparing artists to users, lower score wins. Genres are weighted more (x2)
+        // Currently, if a duplicate artist exists, the last one in the database will be selected
         for (const artist of artistsResult.rows) {
             const energyDifference = Math.abs(Number(user.energy) - Number(artist.energy));
             const seriousnessDifference = Math.abs(Number(user.seriousness) - Number(artist.seriousness));
@@ -273,6 +293,7 @@ app.get("/meEverything", async (req, res) => {
             }
         }
 
+        // Fetch artist image from Spotify
         let artistImage = null;
         if (bestArtist && bestArtist.spotify_id) {
             try {
@@ -286,6 +307,7 @@ app.get("/meEverything", async (req, res) => {
             }
         }
 
+        // Return user info along with best artist match and score
         return res.json({
             id: user.id,
             email: user.email,
@@ -308,6 +330,7 @@ app.post("/verifypassword", async (req, res) => {
         return res.status(400).json({ error: 'Password is required' });
     }
 
+    // It's "adminpassword". I would probably store this in a database or environment variable in a real application, but hardcoding is fine for this simple use case. The hash was generated using bcrypt with 10 salt rounds.
     const savedHash = "$2b$10$ISpqqCudMLvfzPhtvEJGpOEivQNzP/wQMwIHP2kl7jvzxXVBMfEjG";
     
     try {

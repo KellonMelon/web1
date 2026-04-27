@@ -1,3 +1,4 @@
+// Getting and connecting to HTML elements
 const insertArtistForm = document.getElementById('insertArtistForm');
 const signInForm = document.getElementById('signInForm');
 const createAccountForm = document.getElementById('createAccountForm');
@@ -10,8 +11,10 @@ const artistSuccess = document.getElementById('artistSuccess');
 const artistSuccessMessage = document.getElementById('artistSuccessMessage');
 const signinButton = document.getElementById('signinButton');
 
+// Setting the default for the next page
 const DEFAULT_NEXT_PAGE = '/personality';
 
+// Sets the next page somewhat safely
 function normalizeNextPage(next) {
   if (!next) return DEFAULT_NEXT_PAGE;
   if (next === '/signin' || next === '/login') return DEFAULT_NEXT_PAGE;
@@ -24,6 +27,7 @@ function normalizeNextPage(next) {
   }
 }
 
+// gets the page after logging in
 function getNextPage() {
   const params = new URLSearchParams(window.location.search);
   const nextFromQuery = params.get('next');
@@ -33,6 +37,7 @@ function getNextPage() {
   return normalizeNextPage(saved);
 }
 
+// saves the current page to get later
 function saveNextPage() {
   const next = window.location.pathname + window.location.search;
   sessionStorage.setItem('signinNext', next);
@@ -42,6 +47,7 @@ if (signinButton && window.location.pathname !== '/signin') {
   signinButton.addEventListener('click', saveNextPage);
 }
 
+// handles front end logic for signing in, passes trimmed email and password to index.js
 if (signInForm) {
   signInForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
@@ -77,6 +83,7 @@ if (signInForm) {
   });
 }
 
+// handles front end logic for create acount form (similar to sign in)
 if (createAccountForm) {
   createAccountForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
@@ -115,6 +122,7 @@ if (createAccountForm) {
   });
 }
 
+// you get the picture
 if (insertArtistForm) {
   insertArtistForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
@@ -129,7 +137,7 @@ if (insertArtistForm) {
     }
 
     try {
-        // First, verify the password
+        // verify the password
         const passwordResponse = await fetch("/verifypassword", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -198,6 +206,7 @@ if (insertArtistForm) {
   });
 }
 
+// yep
 if (insertPersonalityForm) {
   insertPersonalityForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Prevent the default form submission
@@ -248,14 +257,17 @@ if (insertPersonalityForm) {
   });
 }
 
+// calls logout function below
 if (logoutButton) {
   logoutButton.addEventListener("click", logout);
 }
 
+// Calls logout endpoint and goes to homepage
 async function logout() {
   try {
     const response = await fetch("/logout", { method: "POST" });
     if (response.ok) {
+      // Clear any user-specific data from the page
       window.location.href = '/';
     } else {
       output.innerText = "Logout failed.";
@@ -269,6 +281,8 @@ if (compareButton) {
   compareButton.addEventListener("click", compare);
 }
 
+// calls compare endpoint, gets the best artist match and score, and displays it on the page. 
+// Shows spotify image as a circle
 async function compare() {
   try {
     const response = await fetch("/meEverything");
@@ -296,6 +310,8 @@ async function compare() {
   }
 }
 
+// On page load, check if the user is logged in and update the UI accordingly.
+// If not logged in and on a protected page, redirect to signin with next parameter.
 window.addEventListener('DOMContentLoaded', async () => {
   const signinButton = document.getElementById('signinButton');
   try {
