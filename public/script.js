@@ -9,6 +9,8 @@ const results = document.getElementById('results');
 const compareButton = document.getElementById('compareButton');
 const artistSuccess = document.getElementById('artistSuccess');
 const artistSuccessMessage = document.getElementById('artistSuccessMessage');
+const personalitySuccess = document.getElementById('personalitySuccess');
+const personalitySuccessMessage = document.getElementById('personalitySuccessMessage');
 const signinButton = document.getElementById('signinButton');
 
 // Setting the default for the next page
@@ -72,7 +74,7 @@ if (signInForm) {
         if (response.ok) {
             const redirectTo = getNextPage();
             sessionStorage.removeItem('signinNext');
-            output.innerText = `Logged in as: ${data.email} (ID: ${data.id}). Redirecting...`;
+            output.innerText = `Logged in as: ${data.email}. Redirecting...`;
             window.location.href = redirectTo;
         } else {
             output.innerText = data.error || "Login failed.";
@@ -192,7 +194,7 @@ if (insertArtistForm) {
 
         if (response.ok) {
           if (artistSuccess && artistSuccessMessage) {
-            artistSuccessMessage.innerText = `ID: ${data.id}\nName: ${data.name}`;
+            //artistSuccessMessage.innerText = `ID: ${data.id}\nName: ${data.name}`;
             artistSuccess.style.display = 'block';
           }
           formOutput.innerText = '';
@@ -247,8 +249,11 @@ if (insertPersonalityForm) {
         console.log('Server response:', response.status, data);
 
         if (response.ok) {
-          output.innerText = `Personality saved for: ${data.email}`;
+          if (personalitySuccess && personalitySuccessMessage) {
+            personalitySuccess.style.display = 'block';
+          }
         } else {
+          if (personalitySuccess) personalitySuccess.style.display = 'none';
           output.innerText = data.error || "Failed to submit personality.";
         }
     } catch (error) {
